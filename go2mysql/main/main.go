@@ -18,9 +18,6 @@ const (
 func main() {
 	student := Student{Id: getRoundId(), Name: GetFullName(), Age: getAge(), Sex: getSex()}
 	Insert2table(student)
-	//updateNameById("1")
-
-	//deleteById("50")
 }
 
 func init() {
