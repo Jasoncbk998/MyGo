@@ -14,7 +14,7 @@ const (
 	MAN   = "男"
 	WOMAN = "女"
 )
-//增删改查
+
 func main() {
 	student := Student{Id: getRoundId(), Name: GetFullName(), Age: getAge(), Sex: getSex()}
 	Insert2table(student)
