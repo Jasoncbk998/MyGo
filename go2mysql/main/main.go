@@ -1,6 +1,8 @@
 package main
 
 import (
+	"MyGo/go2mysql/mysqlUtils"
+	_ "MyGo/go2mysql/mysqlUtils"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -15,9 +17,17 @@ const (
 	WOMAN = "女"
 )
 
-func main() {
-	student := Student{Id: getRoundId(), Name: GetFullName(), Age: getAge(), Sex: getSex()}
-	Insert2table(student)
+
+
+type Column struct {
+	id   int
+	name string
+	age  string
+	sex  string
+}
+
+type ColumnsArray struct {
+	columnsArray []*Column
 }
 
 func init() {
@@ -26,40 +36,57 @@ func init() {
 		panic(err)
 	}
 	db = databases
-	//defer db.Close()
 }
 
 var db *sqlx.DB
 
-type Student struct {
-	Id   string    `db:"SID"`
-	Name string `db:"Sname"`
-	Age  string `db:"Sage"`
-	Sex  string `db:"Ssex"`
+func main() {
+	student := mysqlUtils.Student{Id: getRoundId(), Name: GetFullName(), Age: getAge(), Sex: getSex()}
+	mysqlUtils.Insert2table(student,db)
+	arr := SelectById("1", ">")
+	for _,v := range arr.columnsArray{
+		fmt.Println(v)
+	}
+
 }
 
-func  Insert2table(s Student) {
-	sql := fmt.Sprintf("insert into Student(SID,Sname,Sage,Ssex)values (%s,'%s','%s','%s')", s.Id, s.Name, s.Age, s.Sex)
-	//fmt.Println(sql)
+func SelectById(id string, flag string) *ColumnsArray {
+	sql := fmt.Sprintf("select * from Student where SID %s'%s'", flag, id)
+	query, err := db.Query(sql)
+	if err != nil {
+		log.Fatalf("select err:%s", err)
+	}
+	arr := &ColumnsArray{
+		columnsArray: make([]*Column, 0, 100),
+	}
+	for query.Next() {
+		var id int
+		var name string
+		var age string
+		var sex string
+		err := query.Scan(&id, &name, &age, &sex)
+		if err != nil {
+			log.Fatalf("query.Next err : %s", err)
+		}
+		cols := &Column{id: id, name: name, age: age, sex: sex}
+		arr.columnsArray = append(arr.columnsArray,cols)
+	}
+	return arr
+}
+
+func updateNameById(id string) {
+	sql := fmt.Sprintf("update Student set Sname='%s'  where SID=%s", GetFullName(), id)
 	_, err := db.Exec(sql)
 	if err != nil {
-		log.Fatalf("insert into table err:%s", err)
-	}
-}
-func updateNameById(id string) {
-	//update person set username=? where user_id=?", "stu0003", 1)
-	sql := fmt.Sprintf("update Student set Sname='%s'  where SID=%s",GetFullName(),id)
-	_, err := db.Exec(sql)
-	if err!=nil{
-		log.Fatalf("删除失败,err:%s",err)
+		log.Fatalf("删除失败,err:%s", err)
 	}
 }
 
 func deleteById(id string) {
-	sql := fmt.Sprintf("delete from Student where SID>=%s",id)
+	sql := fmt.Sprintf("delete from Student where SID>=%s", id)
 	_, err := db.Exec(sql)
-	if err!=nil{
-		log.Fatalf("删除失败,err:%s",err)
+	if err != nil {
+		log.Fatalf("删除失败,err:%s", err)
 	}
 }
 
